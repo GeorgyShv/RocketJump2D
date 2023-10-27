@@ -14,5 +14,7 @@ public class GamePanel extends JPanel {
 
         g.setColor(new Color(0, 1, 0));
         g.fillRect(1, 10, 200, 50);
+        g.setColor(new Color(200, 80, 30));
+        g.fillOval(50, 50, 100, 20);
     }
 }
