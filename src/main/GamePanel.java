@@ -13,7 +13,10 @@ import java.awt.event.MouseListener;
 public class GamePanel extends JPanel {
 
     private MouseInputs mouseInputs;
-    private int xDelta = 100, yDelta = 100;
+    private float xDelta = 100, yDelta = 100;
+    private float xDir = 1f, yDir = 1f;
+    private int frames = 0;
+    private long lastCheck = 0;
     public GamePanel() {
 
         mouseInputs = new MouseInputs(this);
@@ -39,8 +42,19 @@ public class GamePanel extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
+        updateRectangle();
         g.setColor(new Color(230, 90, 10));
-        g.fillRect(xDelta, yDelta, 200, 50);
-        repaint();
+        g.fillRect((int)xDelta, (int)yDelta, 200, 50);
+
+    }
+
+    private void updateRectangle() {
+        xDelta += xDir;
+        if(xDelta > 350 || xDelta < 0)
+            xDir *= -1;
+
+        yDelta += yDir;
+        if(yDelta > 350 || yDelta < 0)
+            yDir *= -1;
     }
 }
