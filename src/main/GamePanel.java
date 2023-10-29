@@ -3,58 +3,154 @@ package main;
 import inputs.KeyboardInputs;
 import inputs.MouseInputs;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import static utilz.Constants.PlayerConstants.*;
+import static utilz.Constants.Directions.*;
 
 public class GamePanel extends JPanel {
 
     private MouseInputs mouseInputs;
     private float xDelta = 100, yDelta = 100;
-    private float xDir = 1f, yDir = 1f;
-    private int frames = 0;
-    private long lastCheck = 0;
+    private BufferedImage img;
+    private BufferedImage[][] animations;
+    private int aniTick, aniIndex, aniSpeed = 15;
+    private int playerAction = RUNNING;
+    private int playerDir = -1;
+    private boolean moving = false;
+    private Point imageCenter;
+    private int xDir = 0;
+    private int yDir = 0;
+    private double angle = 1;
+
     public GamePanel() {
 
         mouseInputs = new MouseInputs(this);
+
+        importImg();
+        loadAnimations();
+
+        setPanelSize();
         addKeyListener(new KeyboardInputs(this));
         addMouseListener(mouseInputs);
         addMouseMotionListener(mouseInputs);
 
     }
 
-    public void changeXDelta(int value) {
-        this.xDelta += value;
+    private void loadAnimations() {
+        animations = new BufferedImage[7][7];
+
+        for(int j = 0; j< animations.length; j++)
+            for (int i=0; i < animations.length; i++) {
+                animations[j][i] = img.getSubimage(i*64, j*64, 64, 64);
+            }
     }
 
-    public void changeYDelta(int value) {
-        this.yDelta += value;
+    private void importImg() {
+        InputStream is = getClass().getResourceAsStream("/WholeAnimationScenaries.png");
+
+        try {
+            img = ImageIO.read(is);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                is.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
-    public void setRectPose(int x, int y) {
-        this.xDelta = x;
-        this.yDelta = y;
+    private void setPanelSize() {
+        Dimension size = new Dimension(1280, 800);
+        setMinimumSize(size);
+        setPreferredSize(size);
+        setMaximumSize(size);
+
+    }
+
+    public void setDirection(int direction) {
+        this.playerDir = direction;
+        moving = true;
+
+    }
+
+    public void setMoving(boolean moving) {
+        this.moving = moving;
+    }
+
+    public void setGunDir(int x, int y) {
+        this.xDir = x;
+        this.yDir = y;
+    }
+
+    private void updateAnimationTick() {
+
+
+        aniTick++;
+        if(aniTick >= aniSpeed) {
+            aniTick = 0;
+            aniIndex++;
+            if(aniIndex >= GetSpriteAmount(playerAction))
+                aniIndex = 0;
+        }
+
+    }
+
+    private void setAnimation() {
+        if (moving)
+            playerAction = RUNNING;
+        else
+            playerAction = IDLE;
+    }
+
+    private void updatePos() {
+        if (moving) {
+            switch(playerDir) {
+                case LEFT:
+                    xDelta -= 5;
+                    break;
+                case UP:
+                    yDelta -= 5;
+                    break;
+                case RIGHT:
+                    xDelta += 5;
+                    break;
+                case DOWN:
+                    yDelta += 5;
+                    break;
+            }
+        }
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        updateRectangle();
-        g.setColor(new Color(230, 90, 10));
-        g.fillRect((int)xDelta, (int)yDelta, 200, 50);
+        updateAnimationTick();
+        setAnimation();
+        updatePos();
+        g.drawImage(animations[playerAction][aniIndex], (int) xDelta, (int) yDelta, 128, 128, null);
 
-    }
+        /*
+        imageCenter = new Point(32+128, 32+128);
+        double dx = xDir - imageCenter.x;
+        double dy = yDir - imageCenter.y;
+        angle = Math.toDegrees(Math.atan2(dy,dx));
+         */
 
-    private void updateRectangle() {
-        xDelta += xDir;
-        if(xDelta > 350 || xDelta < 0)
-            xDir *= -1;
+        //Graphics2D g2d = (Graphics2D)g;
+        //AffineTransform rotateImg = new AffineTransform();
+        //rotateImg.rotate(Math.toRadians(angle), imageCenter.x, imageCenter.y);
+        //g2d.setTransform(rotateImg);
+        //g2d.drawImage(img, (int) xDelta, (int) yDelta, 128, 128, null);
+        //g2d.dispose();
 
-        yDelta += yDir;
-        if(yDelta > 350 || yDelta < 0)
-            yDir *= -1;
     }
 }
