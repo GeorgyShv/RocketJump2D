@@ -107,11 +107,13 @@ public class Player extends Entity{
 
         if (left && !right)
             xSpeed = -playerSpeed;
+
         else if (right && !left)
             xSpeed = playerSpeed;
 
         if (up && !down)
             ySpeed = -playerSpeed;
+
         else if (down && !up)
             ySpeed = playerSpeed;
 
