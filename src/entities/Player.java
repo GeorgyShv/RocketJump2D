@@ -39,7 +39,7 @@ public class Player extends Entity{
 
     public void update() {
         updatePos();
-        updateHitbox();
+        //updateHitbox();
         updateAnimationTick();
         setAnimation();
     }
