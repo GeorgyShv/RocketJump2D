@@ -1,7 +1,11 @@
 package entities;
 
+import utilz.LoadSave;
+import static utilz.HelpMethods.CanMoveHere;
+
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,12 +17,13 @@ import static utilz.Constants.PlayerConstants.*;
 public class Player extends Entity{
 
     private BufferedImage[][] animations;
-    private int aniTick, aniIndex, aniSpeed = 30;
+    private int aniTick, aniIndex, aniSpeed = 25;
     private int playerAction = RUNNING;
     private int playerDir = -1;
     private boolean moving = false, attacking = false;
     private boolean left, up, right, down;
     private float playerSpeed = 2.0f;
+    private int[][] lvlData;
 
     // Проба поворота изображения за курсором
     private Point imageCenter;
@@ -26,32 +31,38 @@ public class Player extends Entity{
     private int yDir = 0;
     private double angle = 1;
 
-    public Player(float x, float y) {
-        super(x, y);
+    public Player(float x, float y, int width, int height) {
+        super(x, y, width, height);
         loadAnimations();
+
     }
 
     public void update() {
         updatePos();
+        updateHitbox();
         updateAnimationTick();
         setAnimation();
     }
 
+//    public void setGunDir(int x, int y) {
+//        this.xDir = x;
+//        this.yDir = y;
+//    }
+
     public void render(Graphics g) {
-        g.drawImage(animations[playerAction][aniIndex], (int) x, (int) y, 128, 128, null);
+//        imageCenter = new Point((int) x + 48, (int) y + 48);
+//        double dx = xDir - imageCenter.x;
+//        double dy = yDir - imageCenter.y;
+//        angle = Math.toDegrees(Math.atan2(dy,dx));
 
-        /*
-        imageCenter = new Point(32+128, 32+128);
-        double dx = xDir - imageCenter.x;
-        double dy = yDir - imageCenter.y;
-        angle = Math.toDegrees(Math.atan2(dy,dx));
-         */
 
-        //Graphics2D g2d = (Graphics2D)g;
-        //AffineTransform rotateImg = new AffineTransform();
-        //rotateImg.rotate(Math.toRadians(angle), imageCenter.x, imageCenter.y);
-        //g2d.setTransform(rotateImg);
-        //g2d.drawImage(img, (int) xDelta, (int) yDelta, 128, 128, null);
+//        Graphics2D g2d = (Graphics2D)g;
+//        AffineTransform rotateImg = new AffineTransform();
+//        rotateImg.rotate(Math.toRadians(angle), imageCenter.x, imageCenter.y);
+
+//        g2d.setTransform(rotateImg);
+        g.drawImage(animations[playerAction][aniIndex], (int) x, (int) y, (int) (64 * main.Game.SCALE), (int) (64 * main.Game.SCALE), null);
+        drawHitbox(g);
         //g2d.dispose();
     }
 
@@ -76,7 +87,7 @@ public class Player extends Entity{
             playerAction = IDLE;
 
         if(attacking)
-            playerAction = JUMPING;
+            playerAction = FIRE;
 
         if(startAni != playerAction)
             resetAniTick();
@@ -89,45 +100,39 @@ public class Player extends Entity{
 
     private void updatePos() {
         moving = false;
+        if (!left && !right && !up && !down)
+            return;
 
-        if(left && !right) {
-            x -= playerSpeed;
-            moving = true;
-        } else if(right && !left) {
-            x += playerSpeed;
-            moving = true;
-        }
+        float xSpeed = 0, ySpeed = 0;
 
-        if(up && !down) {
-            y -= playerSpeed;
-            moving = true;
-        } else if(down && !up) {
-            y += playerSpeed;
+        if (left && !right)
+            xSpeed = -playerSpeed;
+        else if (right && !left)
+            xSpeed = playerSpeed;
+
+        if (up && !down)
+            ySpeed = -playerSpeed;
+        else if (down && !up)
+            ySpeed = playerSpeed;
+
+        if (CanMoveHere(hitbox.x + xSpeed, hitbox.y + ySpeed, hitbox.width, hitbox.height, lvlData)) {
+            hitbox.x += xSpeed;
+            hitbox.y += ySpeed;
             moving = true;
         }
     }
 
     private void loadAnimations() {
-        InputStream is = getClass().getResourceAsStream("/WholeAnimationScenaries.png");
+        BufferedImage img = LoadSave.GetSpriteAtlas(LoadSave.PLAYER_ATLAS);
 
-        try {
-            BufferedImage img = ImageIO.read(is);
+        animations = new BufferedImage[7][7];
+        for(int j = 0; j< animations.length; j++)
+            for (int i=0; i < animations.length; i++)
+                animations[j][i] = img.getSubimage(i * 64, j * 64, 64, 64);
+    }
 
-            animations = new BufferedImage[7][7];
-
-            for(int j = 0; j< animations.length; j++)
-                for (int i=0; i < animations.length; i++)
-                    animations[j][i] = img.getSubimage(i * 64, j * 64, 64, 64);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                is.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+    public void loadLvlData(int[][] lvlData) {
+        this.lvlData = lvlData;
     }
 
     public void resetDirBooleans() {
